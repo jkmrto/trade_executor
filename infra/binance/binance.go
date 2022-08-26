@@ -11,9 +11,9 @@ const symbol = "BNBUSDT"
 
 // BinanceListener ...
 type BinanceListener struct {
-	BidUpdatesCh chan []domain.Bid
-	StopCh       chan struct{}
-	StopDoneCh   chan struct{}
+	BidsCh     chan []domain.Bid
+	StopCh     chan struct{}
+	StopDoneCh chan struct{}
 }
 
 // Start ...
@@ -38,7 +38,7 @@ func (bs BinanceListener) processBinanceEvent(event *binance.WsDepthEvent) {
 
 	var bids []domain.Bid
 
-	fmt.Printf("Event: %+v\n", event)
+	// fmt.Printf("Event: %+v\n", event)
 	for index, rawBid := range event.Bids {
 		bidID := binanceBidID(event, index)
 
@@ -50,7 +50,7 @@ func (bs BinanceListener) processBinanceEvent(event *binance.WsDepthEvent) {
 	}
 
 	// Using a gorouting we avoid blocking the Binance consumer
-	go func() { bs.BidUpdatesCh <- bids }()
+	go func() { bs.BidsCh <- bids }()
 }
 
 func binanceBidID(event *binance.WsDepthEvent, index int) string {

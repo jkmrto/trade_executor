@@ -7,9 +7,20 @@
 [ ] Use cases on the app layer
 	- ProcessBidHandler()
 [ ] Infra layer:
-  - [x] Binance Setup
-  - [ ] Database for books order sells
-  - [ ] Maybe an HTTP client for setting orders (?)
+  - [x] Binance Setup 
+	-
+	- Do we need a `BidUpdatesRouter` (?). This manager may be in charge in sending the Bid updates to each 
+  - [ ] Interface for exchange actions
+		- [ ] It can be a `sqlite3` client for storing the result.
+		- [ ] It can be just an in memory solution.
+  - [ ] Maybe an HTTP client for setting orders (?). 
+
+
+## Design decisions
+
+- What about having a goroutine per each sell order? That way we could process in parallel the bid updates, so we can take a decision as soon as possible. As first approach I will assume only one sell order, but I may have to go in this direction later. 
+
+
 
 ## Decisions
 
