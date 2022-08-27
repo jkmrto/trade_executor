@@ -66,7 +66,9 @@ func TestBidsRouter(t *testing.T) {
 
 	})
 
-	t.Run(`random`, func(t *testing.T) {
+	t.Run(`Given a bids router with two sell order manager actived
+	when a new batch of bids arrived,
+	then both the order managers process the bids`, func(t *testing.T) {
 
 		bidsRouter := app.NewBidsRouter()
 		go bidsRouter.Start()

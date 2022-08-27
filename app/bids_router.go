@@ -31,7 +31,8 @@ func (br *BidsRouter) Start() {
 		case orderManagerPtr := <-br.NewSellOrderManagerCh:
 			fmt.Printf("[BidsRouter][New Sell Order manager] %+v \n", orderManagerPtr.ID)
 			br.SoManagers = append(br.SoManagers, orderManagerPtr)
-			fmt.Printf("[BidsRouter] soManagers: %+v\n", br.SoManagers)
+			fmt.Printf("[BidsRouter] soManagers: %+v\n", len(br.SoManagers))
+
 		case sellOrderManagerFinishedID := <-br.SoManagerFinishedIDCh:
 			fmt.Printf("[BidsRouter] Remove sell order manager: %+v\n", sellOrderManagerFinishedID)
 			index := findSellOrderManagerIndex(br.SoManagers, sellOrderManagerFinishedID)
@@ -40,7 +41,7 @@ func (br *BidsRouter) Start() {
 			fmt.Printf("[BidsRouter] soManagers: %+v\n", br.SoManagers)
 
 		case bids := <-br.BidsCh:
-			fmt.Printf("[BidsRouter][Bids received]: Sell Order Managers Actived %+v \n", len(br.SoManagers))
+			//		fmt.Printf("[BidsRouter][Bids received]: Sell Order Managers Actived %+v \n", len(br.SoManagers))
 			for _, sellOrderManager := range br.SoManagers {
 				fmt.Printf("[BidsRouter][Sending Bids]: %+v \n", sellOrderManager.ID)
 				sellOrderManager.BidsCh <- bids
@@ -63,11 +64,5 @@ func findSellOrderManagerIndex(soManagers []*SellOrderManager, sellOrderManagerF
 }
 
 func removeSellManagerAtIndex(s []*SellOrderManager, index int) []*SellOrderManager {
-	ret := make([]*SellOrderManager, 0)
-	ret = append(ret, s[:index]...)
-	return append(ret, s[index+1:]...)
+	return append(s[:index], s[index+1:]...)
 }
-
-//func removeSellManagerAtIndex(s []*SellOrderManager, index int) []*SellOrderManager {
-//	return append(s[:index], s[index+1:]...)
-//}

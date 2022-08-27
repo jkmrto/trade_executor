@@ -7,3 +7,7 @@ run:
 test:
 	go test -v ./...
 
+sell-order-examle1:
+	curl --location --request POST 'http://localhost:8080/SellOrder' \
+	--header 'Content-Type: application/json' \
+	--data-raw '{"price": 300.0, "quantity": 300.0}'
