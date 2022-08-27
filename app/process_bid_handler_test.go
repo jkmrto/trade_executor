@@ -14,9 +14,8 @@ func TestTest(t *testing.T) {
 	t.Run(`When it is called with a bid that can be accepted,
 	then it accepts the bid and send the order to the exchange`,
 		func(t *testing.T) {
-
 			exchangeMock := &ExchangeMock{
-				ApplySellFunc: func(*domain.SellBook) error {
+				ApplySellFunc: func(domain.SellBook) error {
 					fmt.Printf("this is being called")
 					return nil
 				},
@@ -44,7 +43,7 @@ func TestTest(t *testing.T) {
 			// We could even remove this mock, since it is not going to be called
 			// But let's keep it just for being explicits on this test
 			exchangeMock := &ExchangeMock{
-				ApplySellFunc: func(*domain.SellBook) error {
+				ApplySellFunc: func(domain.SellBook) error {
 					fmt.Printf("this is being called")
 					return nil
 				},

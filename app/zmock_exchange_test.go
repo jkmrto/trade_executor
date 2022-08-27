@@ -19,7 +19,7 @@ var _ app.Exchange = &ExchangeMock{}
 //
 //		// make and configure a mocked app.Exchange
 //		mockedExchange := &ExchangeMock{
-//			ApplySellFunc: func(sellBook *domain.SellBook) error {
+//			ApplySellFunc: func(sellBook domain.SellBook) error {
 //				panic("mock out the ApplySell method")
 //			},
 //		}
@@ -30,26 +30,26 @@ var _ app.Exchange = &ExchangeMock{}
 //	}
 type ExchangeMock struct {
 	// ApplySellFunc mocks the ApplySell method.
-	ApplySellFunc func(sellBook *domain.SellBook) error
+	ApplySellFunc func(sellBook domain.SellBook) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// ApplySell holds details about calls to the ApplySell method.
 		ApplySell []struct {
 			// SellBook is the sellBook argument value.
-			SellBook *domain.SellBook
+			SellBook domain.SellBook
 		}
 	}
 	lockApplySell sync.RWMutex
 }
 
 // ApplySell calls ApplySellFunc.
-func (mock *ExchangeMock) ApplySell(sellBook *domain.SellBook) error {
+func (mock *ExchangeMock) ApplySell(sellBook domain.SellBook) error {
 	if mock.ApplySellFunc == nil {
 		panic("ExchangeMock.ApplySellFunc: method is nil but Exchange.ApplySell was just called")
 	}
 	callInfo := struct {
-		SellBook *domain.SellBook
+		SellBook domain.SellBook
 	}{
 		SellBook: sellBook,
 	}
@@ -64,10 +64,10 @@ func (mock *ExchangeMock) ApplySell(sellBook *domain.SellBook) error {
 //
 //	len(mockedExchange.ApplySellCalls())
 func (mock *ExchangeMock) ApplySellCalls() []struct {
-	SellBook *domain.SellBook
+	SellBook domain.SellBook
 } {
 	var calls []struct {
-		SellBook *domain.SellBook
+		SellBook domain.SellBook
 	}
 	mock.lockApplySell.RLock()
 	calls = mock.calls.ApplySell
