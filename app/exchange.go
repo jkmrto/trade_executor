@@ -16,6 +16,6 @@ type DummyExchange struct{}
 
 // ApplySell just prints a given sell order
 func (DummyExchange) ApplySell(sb domain.SellBook) error {
-	fmt.Printf("SellBook: %+v \n", sb)
+	fmt.Printf("[%+v] SellBook: %+v \n", sb.BidID, sb)
 	return nil
 }
