@@ -7,29 +7,29 @@ import (
 	"github.com/jkmrto/trade_executor/domain"
 )
 
-// BinanceListener ...
-type BinanceListener struct {
+// Listener consumes events fron binance WebSocket
+type Listener struct {
 	Symbol     string
 	BidsCh     chan []domain.Bid
 	StopCh     chan struct{}
 	StopDoneCh chan struct{}
 }
 
-// NewBinanceListener  is a construtor
-func NewBinanceListener(symbol string, bidsCh chan []domain.Bid) BinanceListener {
-	return BinanceListener{
+// NewListener  is a construtor
+func NewListener(symbol string, bidsCh chan []domain.Bid) Listener {
+	return Listener{
 		BidsCh: bidsCh,
 		Symbol: symbol,
 	}
 }
 
 // Start ...
-func (bs BinanceListener) Start() {
+func (bs Listener) Start() {
 	errHandler := func(err error) {
 		fmt.Println(err)
 	}
 
-	doneCh, stopCh, err := binance.WsDepthServe(bs.Symbol, bs.processBinanceEvent, errHandler)
+	doneCh, stopCh, err := binance.WsDepthServe(bs.Symbol, bs.processEvent, errHandler)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -42,7 +42,7 @@ func (bs BinanceListener) Start() {
 	return
 }
 
-func (bs BinanceListener) processBinanceEvent(event *binance.WsDepthEvent) {
+func (bs Listener) processEvent(event *binance.WsDepthEvent) {
 
 	var bids []domain.Bid
 

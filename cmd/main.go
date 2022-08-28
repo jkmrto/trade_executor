@@ -14,7 +14,7 @@ import (
 
 // TODO: Handle the binance consumers exits properly
 // TODO: Share context from main to all downstream components
-// TODO: Maybe unblock the sending of messages
+// TODO: Maybe unblock the sending of messages on the bidsRouter
 // from the bidsrouter to the sellOrders executers?
 
 func main() {
@@ -41,7 +41,7 @@ func startPipelineForSymbol(symbol string) *app.BidsRouter {
 	bidsRouter := app.NewBidsRouter(symbol)
 	go func() { bidsRouter.Start() }()
 
-	binanceListener := binance.NewBinanceListener(symbol, bidsRouter.BidsCh)
+	binanceListener := binance.NewListener(symbol, bidsRouter.BidsCh)
 	go func() { binanceListener.Start() }()
 
 	return bidsRouter
