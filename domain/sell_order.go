@@ -31,7 +31,7 @@ func (so SellOrder) canBidBeAccepted(bid Bid) bool {
 }
 
 // ApplySellOnBid ...
-func (so *SellOrder) ApplySellOnBid(bid Bid) *SellBook {
+func (so *SellOrder) ApplySellOnBid(bid Bid) *SellOrderBook {
 	if !so.canBidBeAccepted(bid) {
 		return nil
 	}
@@ -45,7 +45,8 @@ func (so *SellOrder) ApplySellOnBid(bid Bid) *SellBook {
 		qty = bid.Quantity
 	}
 
-	return &SellBook{
+	return &SellOrderBook{
+		SellOrderID:      so.ID,
 		BidID:            bid.ID,
 		BidPrice:         bid.Price,
 		Symbol:           bid.Symbol,
@@ -54,11 +55,12 @@ func (so *SellOrder) ApplySellOnBid(bid Bid) *SellBook {
 	}
 }
 
-//SellBook is a register of a sell over a bid
-type SellBook struct {
+//SellOrderBook is a register of a sell over a bid
+type SellOrderBook struct {
+	SellOrderID      uuid.UUID
 	BidID            string
-	BidPrice         float64
 	Symbol           string
-	MinimumSellPrice float64
 	Quantity         float64
+	MinimumSellPrice float64
+	BidPrice         float64
 }
