@@ -26,7 +26,8 @@ func TestTest(t *testing.T) {
 			bid := domain.NewBid(uuid.New().String(), "BTCUSDT", 1.0, 1.0)
 			so := domain.NewSellOrder("BTCUSDT", 1.0, 1.0)
 
-			pbHandler.Handle(&so, bid)
+			err := pbHandler.Handle(&so, bid)
+			require.NoError(t, err)
 
 			require.Len(t, exchangeMock.ApplySellCalls(), 1)
 			sellBook := exchangeMock.ApplySellCalls()[0].SellOrderBook
@@ -55,7 +56,9 @@ func TestTest(t *testing.T) {
 			bid := domain.NewBid(uuid.New().String(), "BTCUSDT", 1.0, 1.0)
 			so := domain.NewSellOrder("BTCUSDT", 10.0, sellOrderQty)
 
-			pbHandler.Handle(&so, bid)
+			err := pbHandler.Handle(&so, bid)
+			require.NoError(t, err)
+
 			require.Empty(t, exchangeMock.ApplySellCalls(), 1)
 			require.Equal(t, so.RemainingQuantity, sellOrderQty)
 

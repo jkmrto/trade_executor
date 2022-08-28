@@ -15,7 +15,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const schemaVersion = 1
 const databaseName = ""
 const driverName = "sqlite3"
 

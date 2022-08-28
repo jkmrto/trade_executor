@@ -11,8 +11,6 @@ import (
 	"github.com/jkmrto/trade_executor/domain"
 )
 
-const symbol = "BNBUSDT"
-
 // SellOrder  is a DTO
 type SellOrder struct {
 	Quantity *float64 `json:"quantity"`

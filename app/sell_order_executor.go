@@ -17,26 +17,26 @@ type SellOrderExecutor struct {
 }
 
 // NewSellOrderExecutor is a constructor
-func NewSellOrderExecutor(so *domain.SellOrder, processBidHandler ProcessBidHandler, orderIsSoldCh chan uuid.UUID) SellOrderExecutor {
+func NewSellOrderExecutor(so *domain.SellOrder, processBidHandler ProcessBidHandler, finishedCh chan uuid.UUID) SellOrderExecutor {
 	return SellOrderExecutor{
 		ID:                so.ID,
 		SellOrder:         so,
 		ProcessBidHandler: processBidHandler,
 		BidsCh:            make(chan []domain.Bid),
-		FinishedCh:        orderIsSoldCh,
+		FinishedCh:        finishedCh,
 	}
-
 }
 
 // ProcessBids ...
 func (som SellOrderExecutor) ProcessBids() {
 	for bids := range som.BidsCh {
 		for _, bid := range bids {
-			som.ProcessBidHandler.Handle(som.SellOrder, bid)
-			fmt.Printf("[%+v] After processing the bid: %+v\n", som.ID, som.SellOrder)
+			if err := som.ProcessBidHandler.Handle(som.SellOrder, bid); err != nil {
+				fmt.Printf("[SellOrderExecutor %+v] Error processing bid: %v\n", som.ID, err)
+			}
 
 			if som.SellOrder.RemainingQuantity == 0 {
-				fmt.Printf("[%+v] Consumer Exiting \n", som.ID)
+				fmt.Printf("[SellOrderExecutor %+v] Consumer Exiting \n", som.ID)
 				som.FinishedCh <- som.ID
 				return
 			}

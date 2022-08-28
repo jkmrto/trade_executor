@@ -32,11 +32,10 @@ func newHandler(handlers []EndpointHandlerMethod) http.Handler {
 }
 
 // ListenAndServe creates the server and listens and then serves it.
-// Once is listens, closes the readyCh so the clients can start requesting data.
-// TODO: Handle context canceled here
+// TODO: Handle context canceled here to close the server
 func ListenAndServe(conf Config, handlers []EndpointHandlerMethod) error {
 	handler := newHandler(handlers)
-	server := newServer(handler)
+	server := &http.Server{Handler: handler}
 
 	ln, err := net.Listen("tcp", conf.Address)
 	if err != nil {
@@ -48,14 +47,4 @@ func ListenAndServe(conf Config, handlers []EndpointHandlerMethod) error {
 		return nil
 	}
 	return err
-}
-
-// newServer returns an http.Server configured with the provided handler and a
-// base context which will make the handler request have it.
-func newServer(handler http.Handler) *http.Server {
-	server := &http.Server{
-		Handler: handler,
-	}
-
-	return server
 }

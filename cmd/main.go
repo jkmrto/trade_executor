@@ -23,18 +23,20 @@ func main() {
 
 	db, err := setupDB(conf.Sqlite3)
 	if err != nil {
-		fmt.Printf("%+v", err)
+		fmt.Printf("Error on setupDB: %+v\n", err)
 	}
 
-	symbolToBidRouter := make(map[string]*app.BidsRouter)
+	symbolToBidsRouter := make(map[string]*app.BidsRouter)
 	for _, symbol := range conf.SupportedSymbols {
-		symbolToBidRouter[symbol] = startPipelineForSymbol(symbol)
+		symbolToBidsRouter[symbol] = startPipelineForSymbol(symbol)
 	}
 
 	processBidHandler := app.NewProcessBidHandler(db)
-	sellOrderManager := app.NewSellOrderManager(processBidHandler, symbolToBidRouter)
+	sellOrderManager := app.NewSellOrderManager(processBidHandler, symbolToBidsRouter)
 
-	startHTTPServer(sellOrderManager, conf.HTTP)
+	if err = startHTTPServer(sellOrderManager, conf.HTTP); err != nil {
+		fmt.Printf("Error starting HTTP server: %+v\n", err)
+	}
 }
 
 func startPipelineForSymbol(symbol string) *app.BidsRouter {
@@ -48,7 +50,7 @@ func startPipelineForSymbol(symbol string) *app.BidsRouter {
 }
 
 // startHTTPServer is a blocking call
-func startHTTPServer(sellOrderManager app.SellOrderManager, conf httpx.Config) {
+func startHTTPServer(sellOrderManager app.SellOrderManager, conf httpx.Config) error {
 	handlers := []httpx.EndpointHandlerMethod{
 		{
 			Endpoint:    "/SellOrder",
@@ -57,7 +59,7 @@ func startHTTPServer(sellOrderManager app.SellOrderManager, conf httpx.Config) {
 		},
 	}
 
-	httpx.ListenAndServe(conf, handlers)
+	return httpx.ListenAndServe(conf, handlers)
 }
 
 func setupDB(conf sqlite3.Config) (sqlite3.Database, error) {

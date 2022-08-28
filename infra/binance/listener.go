@@ -23,23 +23,24 @@ func NewListener(symbol string, bidsCh chan []domain.Bid) Listener {
 	}
 }
 
-// Start ...
+// Start begins to consume the events from binance
+// It is a blocking call
 func (bs Listener) Start() {
 	errHandler := func(err error) {
 		fmt.Println(err)
 	}
 
-	doneCh, stopCh, err := binance.WsDepthServe(bs.Symbol, bs.processEvent, errHandler)
+	_, _, err := binance.WsDepthServe(bs.Symbol, bs.processEvent, errHandler)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	bs.StopDoneCh = doneCh
-	bs.StopCh = stopCh
+	// TODO: Handle properly the shut down of the binance listeners
+	// bs.StopDoneCh = doneCh
+	// bs.StopCh = stopCh
 
 	fmt.Printf("[Binance consumer %s] Started Correctly\n", bs.Symbol)
-	return
 }
 
 func (bs Listener) processEvent(event *binance.WsDepthEvent) {
