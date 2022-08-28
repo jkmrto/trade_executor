@@ -28,22 +28,14 @@ func main() {
 		fmt.Printf("%+v", err)
 	}
 
-	processBid := app.ProcessBidHandler{
-		Exchange: db,
-	}
+	processBidHandler := app.NewProcessBidHandler(db)
+	somOrganizer := app.NewSellOrderManagerOrganizer(processBidHandler, bidsRouter)
 
-	somOrganizer := app.NewSellOrderManagerOrganizer(processBid, bidsRouter)
+	startHTTPServer(somOrganizer, conf.HTTP)
+}
 
-	// TODO: Handle the binance exit properly
-	// The new SellOrderManager will arrive asynchrounously to the bids router
-	// Since they weill be created form an HTTP interface
-
-	//	// use stopC to exit
-	//	go func() {                     	//   time.Sleep(20 * time.Second)
-	//	}()
-	//		listener.StopCh <- struct{}{}	//	// remove this if you do not want to be blocked here
-	//	<-listener.StopDoneCh
-
+// startHTTPServer is a blocking call
+func startHTTPServer(somOrganizer app.SellOrderManagerOrganizer, conf httpx.Config) {
 	handlers := []httpx.EndpointHandlerMethod{
 		{
 			Endpoint:    "/SellOrder",
@@ -52,7 +44,7 @@ func main() {
 		},
 	}
 
-	httpx.ListenAndServe(conf.HTTP, handlers)
+	httpx.ListenAndServe(conf, handlers)
 }
 
 func setupDB(conf sqlite3.Config) (sqlite3.Database, error) {
@@ -61,7 +53,7 @@ func setupDB(conf sqlite3.Config) (sqlite3.Database, error) {
 		return sqlite3.Database{}, fmt.Errorf("error when connecting to the DB: %v", err)
 	}
 
-	//TODO This is not the ideal way of handling this error here
+	//TODO This is not the ideal way of handling this error (since we are comparing two strings)
 	err = db.RunMigrations()
 	if err != nil && err.Error() != "no change" {
 		return sqlite3.Database{}, fmt.Errorf("error running migrations: %+v", err)
