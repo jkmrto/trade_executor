@@ -32,9 +32,9 @@ func main() {
 	}
 
 	processBidHandler := app.NewProcessBidHandler(db)
-	somOrganizer := app.NewSellOrderManagerOrganizer(processBidHandler, symbolToBidRouter)
+	sellOrderManager := app.NewSellOrderManager(processBidHandler, symbolToBidRouter)
 
-	startHTTPServer(somOrganizer, conf.HTTP)
+	startHTTPServer(sellOrderManager, conf.HTTP)
 }
 
 func startPipelineForSymbol(symbol string) *app.BidsRouter {
@@ -48,12 +48,12 @@ func startPipelineForSymbol(symbol string) *app.BidsRouter {
 }
 
 // startHTTPServer is a blocking call
-func startHTTPServer(somOrganizer app.SellOrderManagerOrganizer, conf httpx.Config) {
+func startHTTPServer(sellOrderManager app.SellOrderManager, conf httpx.Config) {
 	handlers := []httpx.EndpointHandlerMethod{
 		{
 			Endpoint:    "/SellOrder",
 			Method:      http.MethodPost,
-			HandlerFunc: httpx.CreateSellOrder(somOrganizer),
+			HandlerFunc: httpx.CreateSellOrder(sellOrderManager),
 		},
 	}
 

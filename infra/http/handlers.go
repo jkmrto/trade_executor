@@ -22,7 +22,7 @@ type SellOrder struct {
 
 // CreateSellOrder launces a new SellOrderManager if the request is correct
 // TODO: Missing tests for this module
-func CreateSellOrder(somOrganizer app.SellOrderManagerOrganizer) http.HandlerFunc {
+func CreateSellOrder(somOrganizer app.SellOrderManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var so SellOrder
 		if err := json.NewDecoder(r.Body).Decode(&so); err != nil {
@@ -60,7 +60,7 @@ func CreateSellOrder(somOrganizer app.SellOrderManagerOrganizer) http.HandlerFun
 
 		// TODO: I dont really like  being launching from here the SellOrderManager
 		// It would be better to do this in a app.CreateSellOrderHandler
-		err := somOrganizer.LaunchNewSellOrderManager(domainSellOrder)
+		err := somOrganizer.LaunchNewSellOrderExecutor(domainSellOrder)
 
 		var unsupportedSymbolError app.UnsupportedSymbolError
 		if errors.As(err, &unsupportedSymbolError) {

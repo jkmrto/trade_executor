@@ -10,10 +10,10 @@ import (
 // BidsRouter allows to broadcast the bids for a symbol
 // to all the sell orders opened for that symbol
 type BidsRouter struct {
-	BidsCh                chan []domain.Bid
-	SoManagers            []*SellOrderManager
-	SoManagerFinishedIDCh chan uuid.UUID
-	NewSellOrderManagerCh chan *SellOrderManager
+	BidsCh                 chan []domain.Bid
+	SoExecutors            []*SellOrderExecutor
+	SoExecutorFinishedIDCh chan uuid.UUID
+	NewSellOrderExecutorCh chan *SellOrderExecutor
 
 	// This attribute is only useful for debugging purposes
 	Symbol string
@@ -22,10 +22,10 @@ type BidsRouter struct {
 // NewBidsRouter is a constructor
 func NewBidsRouter(symbol string) *BidsRouter {
 	return &BidsRouter{
-		BidsCh:                make(chan []domain.Bid),
-		SoManagerFinishedIDCh: make(chan uuid.UUID),
-		NewSellOrderManagerCh: make(chan *SellOrderManager),
-		Symbol:                symbol,
+		BidsCh:                 make(chan []domain.Bid),
+		SoExecutorFinishedIDCh: make(chan uuid.UUID),
+		NewSellOrderExecutorCh: make(chan *SellOrderExecutor),
+		Symbol:                 symbol,
 	}
 }
 
@@ -33,21 +33,21 @@ func NewBidsRouter(symbol string) *BidsRouter {
 func (br *BidsRouter) Start() {
 	for {
 		select {
-		case orderManagerPtr := <-br.NewSellOrderManagerCh:
-			fmt.Printf("[BidsRouter %+v][New Sell Order manager] %+v \n", br.Symbol, orderManagerPtr.ID)
-			br.SoManagers = append(br.SoManagers, orderManagerPtr)
-			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, len(br.SoManagers))
+		case orderExecutorPtr := <-br.NewSellOrderExecutorCh:
+			fmt.Printf("[BidsRouter %+v][New Sell Order manager] %+v \n", br.Symbol, orderExecutorPtr.ID)
+			br.SoExecutors = append(br.SoExecutors, orderExecutorPtr)
+			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, len(br.SoExecutors))
 
-		case sellOrderManagerFinishedID := <-br.SoManagerFinishedIDCh:
+		case sellOrderManagerFinishedID := <-br.SoExecutorFinishedIDCh:
 			fmt.Printf("[BidsRouter %+v] Remove sell order manager: %+v\n", br.Symbol, sellOrderManagerFinishedID)
-			index := findSellOrderManagerIndex(br.SoManagers, sellOrderManagerFinishedID)
-			br.SoManagers = removeSellManagerAtIndex(br.SoManagers, index)
+			index := findSellOrderManagerIndex(br.SoExecutors, sellOrderManagerFinishedID)
+			br.SoExecutors = removeSellManagerAtIndex(br.SoExecutors, index)
 
-			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, br.SoManagers)
+			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, br.SoExecutors)
 
 		case bids := <-br.BidsCh:
 			//		fmt.Printf("[BidsRouter][Bids received]: Sell Order Managers Actived %+v \n", len(br.SoManagers))
-			for _, sellOrderManager := range br.SoManagers {
+			for _, sellOrderManager := range br.SoExecutors {
 				fmt.Printf("[BidsRouter %+v]: %+v \n", br.Symbol, sellOrderManager.ID)
 				sellOrderManager.BidsCh <- bids
 			}
@@ -57,7 +57,7 @@ func (br *BidsRouter) Start() {
 
 }
 
-func findSellOrderManagerIndex(soManagers []*SellOrderManager, sellOrderManagerFinishedID uuid.UUID) int {
+func findSellOrderManagerIndex(soManagers []*SellOrderExecutor, sellOrderManagerFinishedID uuid.UUID) int {
 	for index, soManager := range soManagers {
 		if soManager.ID == sellOrderManagerFinishedID {
 			return index
@@ -68,6 +68,6 @@ func findSellOrderManagerIndex(soManagers []*SellOrderManager, sellOrderManagerF
 	return -1
 }
 
-func removeSellManagerAtIndex(s []*SellOrderManager, index int) []*SellOrderManager {
+func removeSellManagerAtIndex(s []*SellOrderExecutor, index int) []*SellOrderExecutor {
 	return append(s[:index], s[index+1:]...)
 }

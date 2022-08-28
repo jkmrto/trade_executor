@@ -3,43 +3,45 @@ package app
 import (
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/jkmrto/trade_executor/domain"
 )
 
+// UnsupportedSymbolError is self explanatory
+type UnsupportedSymbolError struct {
+	Symbol string
+}
+
+func (e UnsupportedSymbolError) Error() string {
+	return fmt.Sprintf("Unsupported symbol \"%s\"", e.Symbol)
+}
+
 // SellOrderManager ...
 type SellOrderManager struct {
-	ID                uuid.UUID
-	SellOrder         *domain.SellOrder
 	ProcessBidHandler ProcessBidHandler
-	BidsCh            chan []domain.Bid
-	FinishedCh        chan uuid.UUID
+	SymbolToBidRouter map[string]*BidsRouter
 }
 
 // NewSellOrderManager is a constructor
-func NewSellOrderManager(so *domain.SellOrder, processBidHandler ProcessBidHandler, orderIsSoldCh chan uuid.UUID) SellOrderManager {
-	return SellOrderManager{
-		ID:                so.ID,
-		SellOrder:         so,
-		ProcessBidHandler: processBidHandler,
-		BidsCh:            make(chan []domain.Bid),
-		FinishedCh:        orderIsSoldCh,
-	}
+func NewSellOrderManager(processBid ProcessBidHandler, symbolToBidRouter map[string]*BidsRouter) SellOrderManager {
 
+	return SellOrderManager{
+		ProcessBidHandler: processBid,
+		SymbolToBidRouter: symbolToBidRouter,
+	}
 }
 
-// ProcessBids ...
-func (som SellOrderManager) ProcessBids() {
-	for bids := range som.BidsCh {
-		for _, bid := range bids {
-			som.ProcessBidHandler.Handle(som.SellOrder, bid)
-			fmt.Printf("[%+v] After processing the bid: %+v\n", som.ID, som.SellOrder)
-
-			if som.SellOrder.RemainingQuantity == 0 {
-				fmt.Printf("[%+v] Consumer Exiting \n", som.ID)
-				som.FinishedCh <- som.ID
-				return
-			}
-		}
+// LaunchNewSellOrderManagerOrganizer ...
+// TODO: Share context as argument for graceful exit of the OrderManager
+func (somOrganizer SellOrderManager) LaunchNewSellOrderExecutor(sellOrder domain.SellOrder) error {
+	bidsRouter, ok := somOrganizer.SymbolToBidRouter[sellOrder.Symbol]
+	if !ok {
+		return UnsupportedSymbolError{Symbol: sellOrder.Symbol}
 	}
+
+	sellOrderExecutor := NewSellOrderExecutor(&sellOrder, somOrganizer.ProcessBidHandler, bidsRouter.SoExecutorFinishedIDCh)
+
+	go func() { sellOrderExecutor.ProcessBids() }()
+	bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor
+
+	return nil
 }
