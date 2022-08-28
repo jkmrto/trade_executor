@@ -15,7 +15,7 @@ func TestTest(t *testing.T) {
 	then it accepts the bid and send the order to the exchange`,
 		func(t *testing.T) {
 			exchangeMock := &ExchangeMock{
-				ApplySellFunc: func(domain.SellBook) error {
+				ApplySellFunc: func(domain.SellOrderBook) error {
 					fmt.Printf("this is being called")
 					return nil
 				},
@@ -29,7 +29,7 @@ func TestTest(t *testing.T) {
 			pbHandler.Handle(&so, bid)
 
 			require.Len(t, exchangeMock.ApplySellCalls(), 1)
-			sellBook := exchangeMock.ApplySellCalls()[0].SellBook
+			sellBook := exchangeMock.ApplySellCalls()[0].SellOrderBook
 			require.Equal(t, bid.Quantity, sellBook.Quantity)
 
 			require.Equal(t, so.RemainingQuantity, 0.0)
@@ -43,7 +43,7 @@ func TestTest(t *testing.T) {
 			// We could even remove this mock, since it is not going to be called
 			// But let's keep it just for being explicits on this test
 			exchangeMock := &ExchangeMock{
-				ApplySellFunc: func(domain.SellBook) error {
+				ApplySellFunc: func(domain.SellOrderBook) error {
 					fmt.Printf("this is being called")
 					return nil
 				},

@@ -17,52 +17,52 @@ func TestBidsRouter(t *testing.T) {
 	when a new sell order manager message arrived,
 	then it adds this sell order manager to the list`, func(t *testing.T) {
 
-		bidsRouter := app.NewBidsRouter()
+		bidsRouter := app.NewBidsRouter(symbol)
 		go bidsRouter.Start()
 
 		sellOrder := domain.NewSellOrder(symbol, 280.0, 100.0)
 
-		sellOrderManager := app.NewSellOrderManager(&sellOrder, app.ProcessBidHandler{}, bidsRouter.SoManagerFinishedIDCh)
-		bidsRouter.NewSellOrderManagerCh <- &sellOrderManager
+		sellOrderExecutor := app.NewSellOrderExecutor(&sellOrder, app.ProcessBidHandler{}, bidsRouter.SoExecutorFinishedIDCh)
+		bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor
 
 		for {
-			if len(bidsRouter.SoManagers) == 1 {
+			if len(bidsRouter.SoExecutors) == 1 {
 				break
 			}
 		}
 
 		// Check current status of the SellOrderManager
-		require.Len(t, bidsRouter.SoManagers, 1)
-		require.Equal(t, bidsRouter.SoManagers[0].ID, sellOrderManager.ID)
+		require.Len(t, bidsRouter.SoExecutors, 1)
+		require.Equal(t, bidsRouter.SoExecutors[0].ID, sellOrder.ID)
 	})
 
 	t.Run(`Given a bids router with an active sell order manager,
 	when a finish sell order message arrived,
 	then it removes the sell order manager from the list`, func(t *testing.T) {
 
-		bidsRouter := app.NewBidsRouter()
+		bidsRouter := app.NewBidsRouter(symbol)
 		go bidsRouter.Start()
 
 		sellOrder := domain.NewSellOrder(symbol, 280.0, 100.0)
 
-		sellOrderManager := app.NewSellOrderManager(&sellOrder, app.ProcessBidHandler{}, bidsRouter.SoManagerFinishedIDCh)
-		bidsRouter.NewSellOrderManagerCh <- &sellOrderManager
+		sellOrderExecutor := app.NewSellOrderExecutor(&sellOrder, app.ProcessBidHandler{}, bidsRouter.SoExecutorFinishedIDCh)
+		bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor
 
 		for {
-			if len(bidsRouter.SoManagers) == 1 {
+			if len(bidsRouter.SoExecutors) == 1 {
 				break
 			}
 		}
 
-		bidsRouter.SoManagerFinishedIDCh <- sellOrderManager.ID
+		bidsRouter.SoExecutorFinishedIDCh <- sellOrderExecutor.ID
 
 		for {
-			if len(bidsRouter.SoManagers) == 0 {
+			if len(bidsRouter.SoExecutors) == 0 {
 				break
 			}
 		}
 
-		require.Len(t, bidsRouter.SoManagers, 0)
+		require.Len(t, bidsRouter.SoExecutors, 0)
 
 	})
 
@@ -70,7 +70,7 @@ func TestBidsRouter(t *testing.T) {
 	when a new batch of bids arrived,
 	then both the order managers process the bids`, func(t *testing.T) {
 
-		bidsRouter := app.NewBidsRouter()
+		bidsRouter := app.NewBidsRouter(symbol)
 		go bidsRouter.Start()
 
 		sellOrder1 := domain.NewSellOrder(symbol, 280.0, 100.0)
@@ -78,7 +78,7 @@ func TestBidsRouter(t *testing.T) {
 
 		applySellOnExchangeCh := make(chan struct{})
 		exchangeMock := &ExchangeMock{
-			ApplySellFunc: func(domain.SellBook) error {
+			ApplySellFunc: func(domain.SellOrderBook) error {
 				applySellOnExchangeCh <- struct{}{}
 				return nil
 			},
@@ -86,16 +86,16 @@ func TestBidsRouter(t *testing.T) {
 
 		pbHandler := app.ProcessBidHandler{Exchange: exchangeMock}
 
-		sellOrderManager1 := app.NewSellOrderManager(&sellOrder1, pbHandler, bidsRouter.SoManagerFinishedIDCh)
-		go sellOrderManager1.ProcessBids()
-		sellOrderManager2 := app.NewSellOrderManager(&sellOrder2, pbHandler, bidsRouter.SoManagerFinishedIDCh)
-		go sellOrderManager2.ProcessBids()
+		sellOrderExecutor1 := app.NewSellOrderExecutor(&sellOrder1, pbHandler, bidsRouter.SoExecutorFinishedIDCh)
+		go sellOrderExecutor1.ProcessBids()
+		sellOrderExecutor2 := app.NewSellOrderExecutor(&sellOrder2, pbHandler, bidsRouter.SoExecutorFinishedIDCh)
+		go sellOrderExecutor2.ProcessBids()
 
-		bidsRouter.NewSellOrderManagerCh <- &sellOrderManager1
-		bidsRouter.NewSellOrderManagerCh <- &sellOrderManager2
+		bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor1
+		bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor2
 
 		for {
-			if len(bidsRouter.SoManagers) == 2 {
+			if len(bidsRouter.SoExecutors) == 2 {
 				break
 			}
 		}
@@ -109,12 +109,11 @@ func TestBidsRouter(t *testing.T) {
 		<-applySellOnExchangeCh
 
 		require.Len(t, exchangeMock.ApplySellCalls(), 2)
-		require.Equal(t, exchangeMock.ApplySellCalls()[0].SellBook.BidID, bid.ID)
-		require.Equal(t, exchangeMock.ApplySellCalls()[1].SellBook.BidID, bid.ID)
+		require.Equal(t, exchangeMock.ApplySellCalls()[0].SellOrderBook.BidID, bid.ID)
+		require.Equal(t, exchangeMock.ApplySellCalls()[1].SellOrderBook.BidID, bid.ID)
 
-		// TODO. Maybe this test should be calling an inteface over
-		// ProcessBidHandler, that way we decouple even more the
-		// bidsRouter from the exchange
+		// TODO: Maybe this test should be calling an inteface over
+		// ProcessBidHandler, that way we decouple even more the bidsRouter from the exchange
 	})
 
 }

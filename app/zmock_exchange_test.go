@@ -19,7 +19,7 @@ var _ app.Exchange = &ExchangeMock{}
 //
 //		// make and configure a mocked app.Exchange
 //		mockedExchange := &ExchangeMock{
-//			ApplySellFunc: func(sellBook domain.SellBook) error {
+//			ApplySellFunc: func(sellOrderBook domain.SellOrderBook) error {
 //				panic("mock out the ApplySell method")
 //			},
 //		}
@@ -30,33 +30,33 @@ var _ app.Exchange = &ExchangeMock{}
 //	}
 type ExchangeMock struct {
 	// ApplySellFunc mocks the ApplySell method.
-	ApplySellFunc func(sellBook domain.SellBook) error
+	ApplySellFunc func(sellOrderBook domain.SellOrderBook) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// ApplySell holds details about calls to the ApplySell method.
 		ApplySell []struct {
-			// SellBook is the sellBook argument value.
-			SellBook domain.SellBook
+			// SellOrderBook is the sellOrderBook argument value.
+			SellOrderBook domain.SellOrderBook
 		}
 	}
 	lockApplySell sync.RWMutex
 }
 
 // ApplySell calls ApplySellFunc.
-func (mock *ExchangeMock) ApplySell(sellBook domain.SellBook) error {
+func (mock *ExchangeMock) ApplySell(sellOrderBook domain.SellOrderBook) error {
 	if mock.ApplySellFunc == nil {
 		panic("ExchangeMock.ApplySellFunc: method is nil but Exchange.ApplySell was just called")
 	}
 	callInfo := struct {
-		SellBook domain.SellBook
+		SellOrderBook domain.SellOrderBook
 	}{
-		SellBook: sellBook,
+		SellOrderBook: sellOrderBook,
 	}
 	mock.lockApplySell.Lock()
 	mock.calls.ApplySell = append(mock.calls.ApplySell, callInfo)
 	mock.lockApplySell.Unlock()
-	return mock.ApplySellFunc(sellBook)
+	return mock.ApplySellFunc(sellOrderBook)
 }
 
 // ApplySellCalls gets all the calls that were made to ApplySell.
@@ -64,10 +64,10 @@ func (mock *ExchangeMock) ApplySell(sellBook domain.SellBook) error {
 //
 //	len(mockedExchange.ApplySellCalls())
 func (mock *ExchangeMock) ApplySellCalls() []struct {
-	SellBook domain.SellBook
+	SellOrderBook domain.SellOrderBook
 } {
 	var calls []struct {
-		SellBook domain.SellBook
+		SellOrderBook domain.SellOrderBook
 	}
 	mock.lockApplySell.RLock()
 	calls = mock.calls.ApplySell

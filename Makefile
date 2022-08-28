@@ -5,7 +5,7 @@ run:
 	go run cmd/main.go
 
 test:
-	go test -v ./...
+	go test  ./... -cover
 
 sell-order-examle1:
 	curl --location --request POST 'http://localhost:8080/SellOrder' \
