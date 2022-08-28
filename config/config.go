@@ -7,8 +7,9 @@ import (
 
 // Config is a container for all the needed app configuration.
 type Config struct {
-	HTTP    http.Config
-	Sqlite3 sqlite3.Config
+	HTTP             http.Config
+	Sqlite3          sqlite3.Config
+	SupportedSymbols []string
 }
 
 // New is a constructor.
@@ -21,5 +22,6 @@ func New() Config {
 			DatabaseFilePath:    "./dev.db",
 			MigrationsDirectory: "./migrations",
 		},
+		SupportedSymbols: []string{"BNBUSDT", "BTCUSDT", "ETHBTC"},
 	}
 }

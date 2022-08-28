@@ -7,13 +7,20 @@ import (
 	"github.com/jkmrto/trade_executor/domain"
 )
 
-const symbol = "BNBUSDT"
-
 // BinanceListener ...
 type BinanceListener struct {
+	Symbol     string
 	BidsCh     chan []domain.Bid
 	StopCh     chan struct{}
 	StopDoneCh chan struct{}
+}
+
+// NewBinanceListener  is a construtor
+func NewBinanceListener(symbol string, bidsCh chan []domain.Bid) BinanceListener {
+	return BinanceListener{
+		BidsCh: bidsCh,
+		Symbol: symbol,
+	}
 }
 
 // Start ...
@@ -22,7 +29,7 @@ func (bs BinanceListener) Start() {
 		fmt.Println(err)
 	}
 
-	doneCh, stopCh, err := binance.WsDepthServe(symbol, bs.processBinanceEvent, errHandler)
+	doneCh, stopCh, err := binance.WsDepthServe(bs.Symbol, bs.processBinanceEvent, errHandler)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -31,6 +38,7 @@ func (bs BinanceListener) Start() {
 	bs.StopDoneCh = doneCh
 	bs.StopCh = stopCh
 
+	fmt.Printf("[Binance consumer %s] Started Correctly\n", bs.Symbol)
 	return
 }
 

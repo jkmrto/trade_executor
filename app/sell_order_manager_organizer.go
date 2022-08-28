@@ -1,28 +1,47 @@
 package app
 
-import "github.com/jkmrto/trade_executor/domain"
+import (
+	"fmt"
+
+	"github.com/jkmrto/trade_executor/domain"
+)
+
+// UnsupportedSymbolError is self explanatory
+type UnsupportedSymbolError struct {
+	Symbol string
+}
+
+func (e UnsupportedSymbolError) Error() string {
+	return fmt.Sprintf("Unsupported symbol \"%s\"", e.Symbol)
+}
 
 // SellOrderManagerOrganizer ...
 type SellOrderManagerOrganizer struct {
 	ProcessBidHandler ProcessBidHandler
-	BidsRouter        *BidsRouter
+	SymbolToBidRouter map[string]*BidsRouter
 }
 
 // NewSellOrderManagerOrganizer ...
-func NewSellOrderManagerOrganizer(processBid ProcessBidHandler, bidsRouter *BidsRouter) SellOrderManagerOrganizer {
+func NewSellOrderManagerOrganizer(processBid ProcessBidHandler, symbolToBidRouter map[string]*BidsRouter) SellOrderManagerOrganizer {
 
 	return SellOrderManagerOrganizer{
 		ProcessBidHandler: processBid,
-		BidsRouter:        bidsRouter,
+		SymbolToBidRouter: symbolToBidRouter,
 	}
 }
 
-// LaunchNewSellOrderManager ...
+// LaunchNewSellOrderManagerOrganizer ...
 // TODO: Share context as argument for graceful exit of the OrderManager
-func (somOrganizer SellOrderManagerOrganizer) LaunchNewSellOrderManager(sellOrder domain.SellOrder) {
-	sellOrderManager := NewSellOrderManager(&sellOrder, somOrganizer.ProcessBidHandler, somOrganizer.BidsRouter.SoManagerFinishedIDCh)
+func (somOrganizer SellOrderManagerOrganizer) LaunchNewSellOrderManager(sellOrder domain.SellOrder) error {
+	bidsRouter, ok := somOrganizer.SymbolToBidRouter[sellOrder.Symbol]
+	if !ok {
+		return UnsupportedSymbolError{Symbol: sellOrder.Symbol}
+	}
+
+	sellOrderManager := NewSellOrderManager(&sellOrder, somOrganizer.ProcessBidHandler, bidsRouter.SoManagerFinishedIDCh)
 
 	go func() { sellOrderManager.ProcessBids() }()
-	somOrganizer.BidsRouter.NewSellOrderManagerCh <- &sellOrderManager
+	bidsRouter.NewSellOrderManagerCh <- &sellOrderManager
 
+	return nil
 }

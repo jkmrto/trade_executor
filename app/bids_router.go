@@ -7,20 +7,25 @@ import (
 	"github.com/jkmrto/trade_executor/domain"
 )
 
-// BidsRouter ...
+// BidsRouter allows to broadcast the bids for a symbol
+// to all the sell orders opened for that symbol
 type BidsRouter struct {
 	BidsCh                chan []domain.Bid
 	SoManagers            []*SellOrderManager
 	SoManagerFinishedIDCh chan uuid.UUID
 	NewSellOrderManagerCh chan *SellOrderManager
+
+	// This attribute is only useful for debugging purposes
+	Symbol string
 }
 
-// NewBidsRouter ...
-func NewBidsRouter() *BidsRouter {
+// NewBidsRouter is a constructor
+func NewBidsRouter(symbol string) *BidsRouter {
 	return &BidsRouter{
 		BidsCh:                make(chan []domain.Bid),
 		SoManagerFinishedIDCh: make(chan uuid.UUID),
 		NewSellOrderManagerCh: make(chan *SellOrderManager),
+		Symbol:                symbol,
 	}
 }
 
@@ -29,21 +34,21 @@ func (br *BidsRouter) Start() {
 	for {
 		select {
 		case orderManagerPtr := <-br.NewSellOrderManagerCh:
-			fmt.Printf("[BidsRouter][New Sell Order manager] %+v \n", orderManagerPtr.ID)
+			fmt.Printf("[BidsRouter %+v][New Sell Order manager] %+v \n", br.Symbol, orderManagerPtr.ID)
 			br.SoManagers = append(br.SoManagers, orderManagerPtr)
-			fmt.Printf("[BidsRouter] soManagers: %+v\n", len(br.SoManagers))
+			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, len(br.SoManagers))
 
 		case sellOrderManagerFinishedID := <-br.SoManagerFinishedIDCh:
-			fmt.Printf("[BidsRouter] Remove sell order manager: %+v\n", sellOrderManagerFinishedID)
+			fmt.Printf("[BidsRouter %+v] Remove sell order manager: %+v\n", br.Symbol, sellOrderManagerFinishedID)
 			index := findSellOrderManagerIndex(br.SoManagers, sellOrderManagerFinishedID)
 			br.SoManagers = removeSellManagerAtIndex(br.SoManagers, index)
 
-			fmt.Printf("[BidsRouter] soManagers: %+v\n", br.SoManagers)
+			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, br.SoManagers)
 
 		case bids := <-br.BidsCh:
 			//		fmt.Printf("[BidsRouter][Bids received]: Sell Order Managers Actived %+v \n", len(br.SoManagers))
 			for _, sellOrderManager := range br.SoManagers {
-				fmt.Printf("[BidsRouter][Sending Bids]: %+v \n", sellOrderManager.ID)
+				fmt.Printf("[BidsRouter %+v]: %+v \n", br.Symbol, sellOrderManager.ID)
 				sellOrderManager.BidsCh <- bids
 			}
 

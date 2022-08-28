@@ -12,26 +12,39 @@ import (
 	httpx "github.com/jkmrto/trade_executor/infra/http"
 )
 
-const symbol = "BNBUSDT"
+// TODO: Handle the binance consumers exits properly
+// TODO: Share context from main to all downstream components
+// TODO: Maybe unblock the sending of messages
+// from the bidsrouter to the sellOrders executers?
 
 func main() {
+
 	conf := config.New()
-
-	bidsRouter := app.NewBidsRouter()
-	go func() { bidsRouter.Start() }()
-
-	binanceListener := binance.BinanceListener{BidsCh: bidsRouter.BidsCh}
-	go func() { binanceListener.Start() }()
 
 	db, err := setupDB(conf.Sqlite3)
 	if err != nil {
 		fmt.Printf("%+v", err)
 	}
 
+	symbolToBidRouter := make(map[string]*app.BidsRouter)
+	for _, symbol := range conf.SupportedSymbols {
+		symbolToBidRouter[symbol] = startPipelineForSymbol(symbol)
+	}
+
 	processBidHandler := app.NewProcessBidHandler(db)
-	somOrganizer := app.NewSellOrderManagerOrganizer(processBidHandler, bidsRouter)
+	somOrganizer := app.NewSellOrderManagerOrganizer(processBidHandler, symbolToBidRouter)
 
 	startHTTPServer(somOrganizer, conf.HTTP)
+}
+
+func startPipelineForSymbol(symbol string) *app.BidsRouter {
+	bidsRouter := app.NewBidsRouter(symbol)
+	go func() { bidsRouter.Start() }()
+
+	binanceListener := binance.NewBinanceListener(symbol, bidsRouter.BidsCh)
+	go func() { binanceListener.Start() }()
+
+	return bidsRouter
 }
 
 // startHTTPServer is a blocking call
