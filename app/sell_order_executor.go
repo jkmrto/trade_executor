@@ -9,37 +9,47 @@ import (
 
 // SellOrderExecutor processess the incoming bid updates for selling a give order
 type SellOrderExecutor struct {
-	ID                uuid.UUID
-	SellOrder         *domain.SellOrder
-	ProcessBidHandler ProcessBidHandler
-	BidsCh            chan []domain.Bid
-	FinishedCh        chan uuid.UUID
+	ID                          uuid.UUID
+	SellOrder                   *domain.SellOrder
+	ProcessBidHandler           ProcessBidHandler
+	ShowSellOrderSummaryHandler ShowSellOrderSummaryHandler
+	BidsCh                      chan []domain.Bid
+	FinishedCh                  chan uuid.UUID
 }
 
 // NewSellOrderExecutor is a constructor
-func NewSellOrderExecutor(so *domain.SellOrder, processBidHandler ProcessBidHandler, finishedCh chan uuid.UUID) SellOrderExecutor {
+func NewSellOrderExecutor(so *domain.SellOrder, processBidHandler ProcessBidHandler, showSellOrderSummaryHandler ShowSellOrderSummaryHandler, finishedCh chan uuid.UUID) SellOrderExecutor {
 	return SellOrderExecutor{
-		ID:                so.ID,
-		SellOrder:         so,
-		ProcessBidHandler: processBidHandler,
-		BidsCh:            make(chan []domain.Bid),
-		FinishedCh:        finishedCh,
+		ID:                          so.ID,
+		SellOrder:                   so,
+		ProcessBidHandler:           processBidHandler,
+		ShowSellOrderSummaryHandler: showSellOrderSummaryHandler,
+		BidsCh:                      make(chan []domain.Bid),
+		FinishedCh:                  finishedCh,
 	}
 }
 
-// ProcessBids ...
-func (som SellOrderExecutor) ProcessBids() {
-	for bids := range som.BidsCh {
+func (soe SellOrderExecutor) ProcessBids() {
+	for bids := range soe.BidsCh {
 		for _, bid := range bids {
-			if err := som.ProcessBidHandler.Handle(som.SellOrder, bid); err != nil {
-				fmt.Printf("[SellOrderExecutor %+v] Error processing bid: %v\n", som.ID, err)
+			if err := soe.ProcessBidHandler.Handle(soe.SellOrder, bid); err != nil {
+				fmt.Printf("[SellOrderExecutor %+v] Error processing bid: %v\n", soe.ID, err)
 			}
 
-			if som.SellOrder.RemainingQuantity == 0 {
-				fmt.Printf("[SellOrderExecutor %+v] Consumer Exiting \n", som.ID)
-				som.FinishedCh <- som.ID
+			if soe.SellOrder.RemainingQuantity == 0 {
+				soe.handleOrderWasSold()
 				return
 			}
 		}
 	}
+}
+
+func (soe SellOrderExecutor) handleOrderWasSold() {
+	fmt.Printf("[SellOrderExecutor %+v] Exiting \n", soe.ID)
+
+	if err := soe.ShowSellOrderSummaryHandler.Handle(*soe.SellOrder); err != nil {
+
+		fmt.Printf("[SellOrderExecutor %+v] Error showing the summary for a sell oreshowing the summary for a sell orerr: %v\n", soe.ID, err)
+	}
+	soe.FinishedCh <- soe.ID
 }

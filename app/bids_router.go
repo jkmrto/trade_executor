@@ -34,21 +34,17 @@ func (br *BidsRouter) Start() {
 	for {
 		select {
 		case orderExecutorPtr := <-br.NewSellOrderExecutorCh:
-			fmt.Printf("[BidsRouter %+v][New Sell Order manager] %+v \n", br.Symbol, orderExecutorPtr.ID)
 			br.SoExecutors = append(br.SoExecutors, orderExecutorPtr)
-			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, len(br.SoExecutors))
+			fmt.Printf("[BidsRouter %+v] Added Executor: %+v, Total ellOrderExecutors: %+v\n", br.Symbol, orderExecutorPtr.ID, len(br.SoExecutors))
 
 		case sellOrderManagerFinishedID := <-br.SoExecutorFinishedIDCh:
-			fmt.Printf("[BidsRouter %+v] Remove sell order manager: %+v\n", br.Symbol, sellOrderManagerFinishedID)
 			index := findSellOrderManagerIndex(br.SoExecutors, sellOrderManagerFinishedID)
 			br.SoExecutors = removeSellManagerAtIndex(br.SoExecutors, index)
 
-			fmt.Printf("[BidsRouter %+v] soManagers: %+v\n", br.Symbol, br.SoExecutors)
+			fmt.Printf("[BidsRouter %+v] RemainingSellOrdwerExecutors: %+v\n", br.Symbol, len(br.SoExecutors))
 
 		case bids := <-br.BidsCh:
-			//		fmt.Printf("[BidsRouter][Bids received]: Sell Order Managers Actived %+v \n", len(br.SoManagers))
 			for _, sellOrderManager := range br.SoExecutors {
-				fmt.Printf("[BidsRouter %+v]: %+v \n", br.Symbol, sellOrderManager.ID)
 				sellOrderManager.BidsCh <- bids
 			}
 

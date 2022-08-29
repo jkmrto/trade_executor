@@ -17,28 +17,30 @@ func (e UnsupportedSymbolError) Error() string {
 
 // SellOrderManager ...
 type SellOrderManager struct {
-	ProcessBidHandler ProcessBidHandler
-	SymbolToBidRouter map[string]*BidsRouter
+	ProcessBidHandler           ProcessBidHandler
+	ShowSellOrderSummaryHandler ShowSellOrderSummaryHandler
+	SymbolToBidRouter           map[string]*BidsRouter
 }
 
-// NewSellOrderManager is a constructor
-func NewSellOrderManager(processBid ProcessBidHandler, symbolToBidRouter map[string]*BidsRouter) SellOrderManager {
+// NewSellOrderManager is a constructo
+func NewSellOrderManager(processBid ProcessBidHandler, showSellOrderSummary ShowSellOrderSummaryHandler, symbolToBidRouter map[string]*BidsRouter) SellOrderManager {
 
 	return SellOrderManager{
-		ProcessBidHandler: processBid,
-		SymbolToBidRouter: symbolToBidRouter,
+		ProcessBidHandler:           processBid,
+		ShowSellOrderSummaryHandler: showSellOrderSummary,
+		SymbolToBidRouter:           symbolToBidRouter,
 	}
 }
 
-// LaunchNewSellOrderManagerOrganizer ...
+//  LaunchNewSellOrderExecutor ...
 // TODO: Share context as argument for graceful exit of the OrderManager
-func (somOrganizer SellOrderManager) LaunchNewSellOrderExecutor(sellOrder domain.SellOrder) error {
-	bidsRouter, ok := somOrganizer.SymbolToBidRouter[sellOrder.Symbol]
+func (som SellOrderManager) LaunchNewSellOrderExecutor(sellOrder domain.SellOrder) error {
+	bidsRouter, ok := som.SymbolToBidRouter[sellOrder.Symbol]
 	if !ok {
 		return UnsupportedSymbolError{Symbol: sellOrder.Symbol}
 	}
 
-	sellOrderExecutor := NewSellOrderExecutor(&sellOrder, somOrganizer.ProcessBidHandler, bidsRouter.SoExecutorFinishedIDCh)
+	sellOrderExecutor := NewSellOrderExecutor(&sellOrder, som.ProcessBidHandler, som.ShowSellOrderSummaryHandler, bidsRouter.SoExecutorFinishedIDCh)
 
 	go func() { sellOrderExecutor.ProcessBids() }()
 	bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor

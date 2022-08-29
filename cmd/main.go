@@ -25,6 +25,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error on setupDB: %+v\n", err)
 	}
+	defer db.Connection.Close()
 
 	symbolToBidsRouter := make(map[string]*app.BidsRouter)
 	for _, symbol := range conf.SupportedSymbols {
@@ -32,7 +33,8 @@ func main() {
 	}
 
 	processBidHandler := app.NewProcessBidHandler(db)
-	sellOrderManager := app.NewSellOrderManager(processBidHandler, symbolToBidsRouter)
+	showSellOrderSummaryHandler := app.NewShowSellOrderSummaryHandler(db)
+	sellOrderManager := app.NewSellOrderManager(processBidHandler, showSellOrderSummaryHandler, symbolToBidsRouter)
 
 	if err = startHTTPServer(sellOrderManager, conf.HTTP); err != nil {
 		fmt.Printf("Error starting HTTP server: %+v\n", err)
