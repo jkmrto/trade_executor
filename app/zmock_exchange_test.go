@@ -4,6 +4,7 @@
 package app_test
 
 import (
+	"github.com/google/uuid"
 	"github.com/jkmrto/trade_executor/app"
 	"github.com/jkmrto/trade_executor/domain"
 	"sync"
@@ -22,6 +23,9 @@ var _ app.Exchange = &ExchangeMock{}
 //			ApplySellFunc: func(sellOrderBook domain.SellOrderBook) error {
 //				panic("mock out the ApplySell method")
 //			},
+//			GetSellOrderBooksFunc: func(uUID uuid.UUID) ([]domain.SellOrderBook, error) {
+//				panic("mock out the GetSellOrderBooks method")
+//			},
 //		}
 //
 //		// use mockedExchange in code that requires app.Exchange
@@ -32,6 +36,9 @@ type ExchangeMock struct {
 	// ApplySellFunc mocks the ApplySell method.
 	ApplySellFunc func(sellOrderBook domain.SellOrderBook) error
 
+	// GetSellOrderBooksFunc mocks the GetSellOrderBooks method.
+	GetSellOrderBooksFunc func(uUID uuid.UUID) ([]domain.SellOrderBook, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// ApplySell holds details about calls to the ApplySell method.
@@ -39,8 +46,14 @@ type ExchangeMock struct {
 			// SellOrderBook is the sellOrderBook argument value.
 			SellOrderBook domain.SellOrderBook
 		}
+		// GetSellOrderBooks holds details about calls to the GetSellOrderBooks method.
+		GetSellOrderBooks []struct {
+			// UUID is the uUID argument value.
+			UUID uuid.UUID
+		}
 	}
-	lockApplySell sync.RWMutex
+	lockApplySell         sync.RWMutex
+	lockGetSellOrderBooks sync.RWMutex
 }
 
 // ApplySell calls ApplySellFunc.
@@ -72,5 +85,37 @@ func (mock *ExchangeMock) ApplySellCalls() []struct {
 	mock.lockApplySell.RLock()
 	calls = mock.calls.ApplySell
 	mock.lockApplySell.RUnlock()
+	return calls
+}
+
+// GetSellOrderBooks calls GetSellOrderBooksFunc.
+func (mock *ExchangeMock) GetSellOrderBooks(uUID uuid.UUID) ([]domain.SellOrderBook, error) {
+	if mock.GetSellOrderBooksFunc == nil {
+		panic("ExchangeMock.GetSellOrderBooksFunc: method is nil but Exchange.GetSellOrderBooks was just called")
+	}
+	callInfo := struct {
+		UUID uuid.UUID
+	}{
+		UUID: uUID,
+	}
+	mock.lockGetSellOrderBooks.Lock()
+	mock.calls.GetSellOrderBooks = append(mock.calls.GetSellOrderBooks, callInfo)
+	mock.lockGetSellOrderBooks.Unlock()
+	return mock.GetSellOrderBooksFunc(uUID)
+}
+
+// GetSellOrderBooksCalls gets all the calls that were made to GetSellOrderBooks.
+// Check the length with:
+//
+//	len(mockedExchange.GetSellOrderBooksCalls())
+func (mock *ExchangeMock) GetSellOrderBooksCalls() []struct {
+	UUID uuid.UUID
+} {
+	var calls []struct {
+		UUID uuid.UUID
+	}
+	mock.lockGetSellOrderBooks.RLock()
+	calls = mock.calls.GetSellOrderBooks
+	mock.lockGetSellOrderBooks.RUnlock()
 	return calls
 }

@@ -22,7 +22,7 @@ func TestBidsRouter(t *testing.T) {
 
 		sellOrder := domain.NewSellOrder(symbol, 280.0, 100.0)
 
-		sellOrderExecutor := app.NewSellOrderExecutor(&sellOrder, app.ProcessBidHandler{}, bidsRouter.SoExecutorFinishedIDCh)
+		sellOrderExecutor := app.NewSellOrderExecutor(&sellOrder, app.ProcessBidHandler{}, app.ShowSellOrderSummaryHandler{}, bidsRouter.SoExecutorFinishedIDCh)
 		bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor
 
 		for {
@@ -45,7 +45,7 @@ func TestBidsRouter(t *testing.T) {
 
 		sellOrder := domain.NewSellOrder(symbol, 280.0, 100.0)
 
-		sellOrderExecutor := app.NewSellOrderExecutor(&sellOrder, app.ProcessBidHandler{}, bidsRouter.SoExecutorFinishedIDCh)
+		sellOrderExecutor := app.NewSellOrderExecutor(&sellOrder, app.ProcessBidHandler{}, app.ShowSellOrderSummaryHandler{}, bidsRouter.SoExecutorFinishedIDCh)
 		bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor
 
 		for {
@@ -82,13 +82,17 @@ func TestBidsRouter(t *testing.T) {
 				applySellOnExchangeCh <- struct{}{}
 				return nil
 			},
+			GetSellOrderBooksFunc: func(uuid.UUID) ([]domain.SellOrderBook, error) {
+				return nil, nil
+			},
 		}
 
 		pbHandler := app.ProcessBidHandler{Exchange: exchangeMock}
+		showSellOrderSummaryHandler := app.NewShowSellOrderSummaryHandler(exchangeMock)
 
-		sellOrderExecutor1 := app.NewSellOrderExecutor(&sellOrder1, pbHandler, bidsRouter.SoExecutorFinishedIDCh)
+		sellOrderExecutor1 := app.NewSellOrderExecutor(&sellOrder1, pbHandler, showSellOrderSummaryHandler, bidsRouter.SoExecutorFinishedIDCh)
 		go sellOrderExecutor1.ProcessBids()
-		sellOrderExecutor2 := app.NewSellOrderExecutor(&sellOrder2, pbHandler, bidsRouter.SoExecutorFinishedIDCh)
+		sellOrderExecutor2 := app.NewSellOrderExecutor(&sellOrder2, pbHandler, showSellOrderSummaryHandler, bidsRouter.SoExecutorFinishedIDCh)
 		go sellOrderExecutor2.ProcessBids()
 
 		bidsRouter.NewSellOrderExecutorCh <- &sellOrderExecutor1
