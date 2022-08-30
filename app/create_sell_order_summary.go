@@ -25,10 +25,13 @@ func (ssosh ShowSellOrderSummaryHandler) Handle(sellOrder domain.SellOrder) erro
 		return fmt.Errorf("Error when getting sell order books: %v", err)
 	}
 
-	fmt.Printf("\norderID\t\t\t\t\tSellPrice\tQuantity\n")
+	fmt.Printf("\n--------------------------------------------------------")
+	fmt.Printf("\norderID\t\t\t\t\tRequiredPrice\tSellPrice\tQuantity\n")
 	for _, sob := range sellOrderBooks {
-		fmt.Printf("%s\t%+v\t\t%+v\n", sob.SellOrderID.String(), sob.BidPrice, sob.Quantity)
+		fmt.Printf("%s\t%+v\t\t%+v\t\t%+v\n", sob.SellOrderID.String(), sob.MinimumSellPrice, sob.BidPrice, sob.Quantity)
 
 	}
+
+	fmt.Printf("--------------------------------------------------------\n")
 	return nil
 }

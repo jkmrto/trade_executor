@@ -35,7 +35,7 @@ func (br *BidsRouter) Start() {
 		select {
 		case orderExecutorPtr := <-br.NewSellOrderExecutorCh:
 			br.SoExecutors = append(br.SoExecutors, orderExecutorPtr)
-			fmt.Printf("[BidsRouter %+v] Added Executor: %+v, Total ellOrderExecutors: %+v\n", br.Symbol, orderExecutorPtr.ID, len(br.SoExecutors))
+			fmt.Printf("[BidsRouter %+v] Added Executor: %+v, Total SellOrderExecutors: %+v\n", br.Symbol, orderExecutorPtr.ID, len(br.SoExecutors))
 
 		case sellOrderManagerFinishedID := <-br.SoExecutorFinishedIDCh:
 			index := findSellOrderManagerIndex(br.SoExecutors, sellOrderManagerFinishedID)
